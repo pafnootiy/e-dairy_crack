@@ -27,10 +27,8 @@ def fix_marks(child_account):
     bad_marks_update = Mark.objects.filter(schoolkid=child_account, points__lte=3).update(points=5)
 
 
-def create_commendation(child_name, child_account, lesson_name, COMMENDATION_SAMPLES):
-    child_account = Schoolkid.objects.get(full_name__contains=f"{child_name}")
+def create_commendation(child_account, lesson_name, COMMENDATION_SAMPLES):
     commendation = random.choice(COMMENDATION_SAMPLES)
-
     lesson = Lesson.objects.filter(group_letter=child_account.group_letter, year_of_study=child_account.year_of_study,
                                    subject__title__contains=lesson_name).first()
 
@@ -47,7 +45,9 @@ def main():
 
     try:
         child_account = Schoolkid.objects.get(full_name__contains=f"{child_name}")
-
+        remove_chastisements(child_account)
+        fix_marks(child_account)
+        create_commendation(child_account, lesson_title, COMMENDATION_SAMPLES)
     except:
 
         print(
@@ -62,10 +62,9 @@ def main():
 
             "5 . Пустое поле ввода\n")
 
-    else:
-        remove_chastisements(child_account)
-        fix_marks(child_account)
-        create_commendation(child_name, child_account, lesson_title, COMMENDATION_SAMPLES)
+
+
+
 
 if __name__ == "__main__":
     main()
