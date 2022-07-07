@@ -1,7 +1,7 @@
 import random
 
-from datacenter.models import Commendation
 from datacenter.models import Chastisement
+from datacenter.models import Commendation
 from datacenter.models import Lesson
 from datacenter.models import Mark
 from datacenter.models import Schoolkid
@@ -21,30 +21,24 @@ COMMENDATION_SAMPLES = ["Молодец!", " Отлично!", "Хорошо!", 
 def remove_chastisements(child_account):
     chastisements = Chastisement.objects.filter(schoolkid=child_account)
     chastisements.delete()
-    return chastisements
 
 
 def fix_marks(child_account):
     bad_marks_update = Mark.objects.filter(schoolkid=child_account, points__lte=3).update(points=5)
-    return bad_marks_update
 
 
 def create_commendation(child_name, child_account, lesson_name, COMMENDATION_SAMPLES):
-    default_name = "Фролов Иван"
+    child_account = Schoolkid.objects.get(full_name__contains=f"{child_name}")
+    commendation = random.choice(COMMENDATION_SAMPLES)
 
-    if child_name == default_name:
-        commendation = random.choice(COMMENDATION_SAMPLES)
-        try:
-            lesson = Lesson.objects.filter(group_letter="А", year_of_study=6,
-                                           subject__title__contains=lesson_name).first()
+    lesson = Lesson.objects.filter(group_letter=child_account.group_letter, year_of_study=child_account.year_of_study,
+                                   subject__title__contains=lesson_name).first()
 
-            public_commendation = Commendation.objects.create(text=commendation, schoolkid=child_account,
-                                                              subject=lesson.subject,
-                                                              teacher=lesson.teacher, created=lesson.date)
-        except AttributeError:
-            print("Неверное введено название предмета")
-        else:
-            return public_commendation
+    public_commendation = Commendation.objects.create(text=commendation, schoolkid=child_account,
+                                                      subject=lesson.subject,
+                                                      teacher=lesson.teacher, created=lesson.date)
+
+    return public_commendation
 
 
 def main():
@@ -54,17 +48,24 @@ def main():
     try:
         child_account = Schoolkid.objects.get(full_name__contains=f"{child_name}")
 
-    except Schoolkid.MultipleObjectsReturned:
-        print("Найденно больше чем 1 совпадение , введите корректные данные")
-    except Schoolkid.DoesNotExist:
-        print("Такого ученика не существует ,введите корректные данные")
     except:
-        print("Введите корректное имя ученика и/или название предмета")
+
+        print(
+            "Упс... ! Что- то пошло не так.. Проверить:\n",
+            "1 . Найденно больше чем 1 совпадение , введите корректные данные \n",
+
+            "2 . Такого ученика не существует ,введите корректные данные\n",
+
+            "3 . Введите корректное имя ученика и/или название предмета\n",
+
+            "4 . Неверное введено название предмета\n",
+
+            "5 . Пустое поле ввода\n")
+
     else:
         remove_chastisements(child_account)
         fix_marks(child_account)
         create_commendation(child_name, child_account, lesson_title, COMMENDATION_SAMPLES)
-
 
 if __name__ == "__main__":
     main()
